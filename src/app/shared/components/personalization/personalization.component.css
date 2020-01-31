@@ -1,0 +1,33 @@
+.panel {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 540px;
+  gap: 12px;
+}
+
+.board-container {
+  background: #eee;
+}
+
+.options-container {
+  background: #eee;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+}
+
+.option-container {
+  background: red;
+  height: 100%;
+  width: 100%;
+  transition: all 0.25s ease;
+  transform: translateX(100%);
+}
+
+.selection-container,
+.option-container {
+  grid-row: 1/-1;
+  grid-column: 1/-1;
+}

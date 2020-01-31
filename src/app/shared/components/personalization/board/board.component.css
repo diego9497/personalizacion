@@ -1,0 +1,33 @@
+.board-container {
+  display: grid;
+  height: 100%;
+  grid-template-columns: 64px 1fr 64px;
+  grid-template-rows: 42px 1fr 42px;
+  grid-template-areas:
+    "top    top     top"
+    ".      canvas  right"
+    "bottom bottom  bottom";
+}
+
+.top-controls {
+  grid-area: top;
+  background: red;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.top-controls {
+}
+.canvas {
+  grid-area: canvas;
+  background: white;
+}
+.right-controls {
+  grid-area: right;
+  background: green;
+  padding: 0 16px 0 12px;
+}
+.bottom-controls {
+  grid-area: bottom;
+  background: yellow;
+}
