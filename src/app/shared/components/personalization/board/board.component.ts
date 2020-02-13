@@ -47,5 +47,17 @@ export class BoardComponent implements OnInit, AfterViewInit {
       radius: 50
     });
     this.canvas.add(circle);
+    this.canvas.on("object:moving", e => {
+      var obj = e.target;
+
+      obj.set({
+        top: this.clamp(obj.top, 0, obj.canvas.height - obj.height),
+        left: this.clamp(obj.left, 0, obj.canvas.width - obj.width)
+      });
+      obj.setCoords();
+    });
+  }
+  private clamp(num: number, min: number, max: number) {
+    return Math.min(Math.max(num, min), max);
   }
 }
