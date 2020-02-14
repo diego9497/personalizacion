@@ -8,13 +8,15 @@ import {
 
 import { fabric } from "fabric";
 
+import "fabric-customise-controls";
+
 @Component({
   selector: "app-board",
   templateUrl: "./board.component.html",
   styleUrls: ["./board.component.css"]
 })
 export class BoardComponent implements OnInit, AfterViewInit {
-  private canvas: fabric.Canvas;
+  public canvas: fabric.Canvas;
   // private canvas: any;
 
   url = "/assets/background/camiseta-blanca2.png";
@@ -31,29 +33,101 @@ export class BoardComponent implements OnInit, AfterViewInit {
   ngOnInit() {}
 
   ngAfterViewInit(): void {
-    this.canvas = new fabric.Canvas("canvas", {
-      backgroundColor: "transparent"
-    });
+    this.canvas = new fabric.Canvas("canvas");
     let height = 300;
     let width = 220;
     this.canvas.setHeight(height);
     this.canvas.setWidth(width);
 
-    // fabric.Image.fromURL(url, img => {
-    //   console.log(img);
-    //   this.canvas.backgroundImage = img;
+    this.canvas.on("selection:created", e => {
+      if (e.target.type === "activeSelection") {
+        this.canvas.discardActiveObject();
+      }
+    });
 
-    //   this.canvas.backgroundImage.scaleToWidth(width);
-    //   this.canvas.backgroundImage.scaleToHeight(height);
-    //   console.log(this.canvas.backgroundImage.width);
-    //   console.log(this.canvas.backgroundImage.height);
-    //   this.canvas.renderAll();
-    // });
+    fabric.Canvas.prototype.customiseControls(
+      {
+        tl: {
+          cursor: "pointer",
+          action: function(
+            e,
+            target: fabric.Rect | fabric.IText | fabric.Circle
+          ) {
+            let copia;
+            target.canvas.getActiveObject().clone(clone => {
+              copia = clone;
+              console.log(clone);
+            });
+
+            copia.padding = 10;
+            copia.setControlsVisibility({
+              ml: false,
+              mr: false,
+              mt: false,
+              mb: false,
+              mtr: false
+            });
+
+            copia.set({
+              top:
+                (target.canvas.getHeight() - copia.height * copia.scaleY) / 2,
+              left: (target.canvas.getWidth() - copia.width * copia.scaleX) / 2
+            });
+            copia.setCoords();
+            target.canvas.add(copia);
+            target.canvas.renderAll();
+          }
+        },
+        tr: {
+          action: "rotate",
+          cursor: "grabbing"
+        },
+        bl: {
+          action: "remove",
+          cursor: "pointer"
+        },
+        br: {
+          cursor: "nw-resize"
+        }
+      },
+      function() {
+        this.renderAll();
+      }
+    );
+
+    fabric.Object.prototype.customiseCornerIcons(
+      {
+        settings: {
+          borderColor: "#bbb",
+          cornerSize: 22,
+          cornerShape: "rect",
+          cornerBackgroundColor: "#e6e6e6",
+          cornerPadding: 5
+        },
+        tl: {
+          icon: "assets/icons/duplicate.svg"
+        },
+        tr: {
+          icon: "assets/icons/rotate.svg"
+        },
+        bl: {
+          icon: "assets/icons/delete.svg"
+        },
+        br: {
+          icon: "assets/icons/resize.svg"
+        }
+      },
+      function() {
+        this.renderAll();
+      }
+    );
 
     let rect = new fabric.Rect({
       width: 50,
       height: 60
     });
+
+    this.removeControls(rect);
     this.canvas.add(rect);
     let circle = new fabric.Circle({
       radius: 50,
@@ -61,45 +135,34 @@ export class BoardComponent implements OnInit, AfterViewInit {
       top: 100,
       left: 50
     });
+    this.removeControls(circle);
     this.canvas.add(circle);
 
     let circle2 = new fabric.Circle({
       radius: 70,
       fill: "green",
       top: 180,
-      left: 90
+      left: 90,
+      padding: 7
     });
+    this.removeControls(circle2);
     this.canvas.add(circle2);
-
-    // this.canvas.on("object:moving", e => {
-    //   let obj = e.target;
-    //   obj.setCoords();
-
-    //   let bound = obj.getBoundingRect();
-
-    //   console.log(bound);
-    //   obj.set({
-    //     top: this.clamp(bound.top, 0, this.canvas.height - bound.height + 1),
-    //     left: this.clamp(bound.left, 0, this.canvas.width - bound.width + 1)
-    //   });
-    //   // }
-    // });
 
     this.generatePreview();
   }
-  private clamp(num: number, min: number, max: number) {
+  private clamp = (num: number, min: number, max: number) => {
     return Math.min(Math.max(num, min), max);
-  }
+  };
 
-  private generateDesign() {
+  private generateDesign = () => {
     this.urlImg1 = this.canvas.toDataURL({
       format: "png",
       quality: 1
     });
     this.canvas.renderAll();
-  }
+  };
 
-  private generatePreview() {
+  generatePreview = () => {
     this.generateDesign();
 
     let canvas2 = new fabric.Canvas("c4");
@@ -123,6 +186,15 @@ export class BoardComponent implements OnInit, AfterViewInit {
         format: "png",
         quality: 1
       });
-    }, 200);
-  }
+    }, 500);
+  };
+
+  removeControls = obj => {
+    obj.setControlVisible("ml", false);
+    obj.setControlVisible("mr", false);
+    obj.setControlVisible("mt", false);
+    obj.setControlVisible("mb", false);
+    obj.setControlVisible("mtr", false);
+    obj.padding = 10;
+  };
 }
