@@ -17,6 +17,13 @@ export class BoardComponent implements OnInit, AfterViewInit {
   private canvas: fabric.Canvas;
   // private canvas: any;
 
+  url = "/assets/background/camiseta-blanca2.png";
+  urlMarca = "/assets/marca/exito.png";
+  urlImg1 = "";
+  urlPreview = "";
+  top = 100;
+  left = 90;
+
   @ViewChild("container", { static: true }) canvasContainer: ElementRef;
 
   constructor() {}
@@ -24,40 +31,98 @@ export class BoardComponent implements OnInit, AfterViewInit {
   ngOnInit() {}
 
   ngAfterViewInit(): void {
-    this.canvas = new fabric.Canvas("canvas");
-    let height = this.canvasContainer.nativeElement.clientHeight;
-    let width = this.canvasContainer.nativeElement.clientWidth;
+    this.canvas = new fabric.Canvas("canvas", {
+      backgroundColor: "transparent"
+    });
+    let height = 300;
+    let width = 220;
     this.canvas.setHeight(height);
     this.canvas.setWidth(width);
-    //let url = "https://cdn.shopify.com/s/files/1/2232/3715/products/8436567654301_CAMISETA_VAMOS_MIGUELITO_T19CAVAMIM__003_1920x.png?v=1548864278";
-    let url = "/assets/background/camiseta-blanca2.png";
-    // let img: fabric.Image;
-    fabric.Image.fromURL(url, img => {
-      console.log(img);
-      this.canvas.backgroundImage = img;
 
-      this.canvas.backgroundImage.scaleToWidth(width);
-      this.canvas.backgroundImage.scaleToHeight(height);
-      console.log(this.canvas.backgroundImage.width);
-      console.log(this.canvas.backgroundImage.height);
-      this.canvas.renderAll();
+    // fabric.Image.fromURL(url, img => {
+    //   console.log(img);
+    //   this.canvas.backgroundImage = img;
+
+    //   this.canvas.backgroundImage.scaleToWidth(width);
+    //   this.canvas.backgroundImage.scaleToHeight(height);
+    //   console.log(this.canvas.backgroundImage.width);
+    //   console.log(this.canvas.backgroundImage.height);
+    //   this.canvas.renderAll();
+    // });
+
+    let rect = new fabric.Rect({
+      width: 50,
+      height: 60
     });
-
+    this.canvas.add(rect);
     let circle = new fabric.Circle({
-      radius: 50
+      radius: 50,
+      fill: "red",
+      top: 100,
+      left: 50
     });
     this.canvas.add(circle);
-    this.canvas.on("object:moving", e => {
-      var obj = e.target;
 
-      obj.set({
-        top: this.clamp(obj.top, 0, obj.canvas.height - obj.height),
-        left: this.clamp(obj.left, 0, obj.canvas.width - obj.width)
-      });
-      obj.setCoords();
+    let circle2 = new fabric.Circle({
+      radius: 70,
+      fill: "green",
+      top: 180,
+      left: 90
     });
+    this.canvas.add(circle2);
+
+    // this.canvas.on("object:moving", e => {
+    //   let obj = e.target;
+    //   obj.setCoords();
+
+    //   let bound = obj.getBoundingRect();
+
+    //   console.log(bound);
+    //   obj.set({
+    //     top: this.clamp(bound.top, 0, this.canvas.height - bound.height + 1),
+    //     left: this.clamp(bound.left, 0, this.canvas.width - bound.width + 1)
+    //   });
+    //   // }
+    // });
+
+    this.generatePreview();
   }
   private clamp(num: number, min: number, max: number) {
     return Math.min(Math.max(num, min), max);
+  }
+
+  private generateDesign() {
+    this.urlImg1 = this.canvas.toDataURL({
+      format: "png",
+      quality: 1
+    });
+    this.canvas.renderAll();
+  }
+
+  private generatePreview() {
+    this.generateDesign();
+
+    let canvas2 = new fabric.Canvas("c4");
+    canvas2.setWidth(410);
+    canvas2.setHeight(547);
+
+    fabric.Image.fromURL(this.url, img => {
+      canvas2.backgroundImage = img;
+    });
+    fabric.Image.fromURL(this.urlImg1, img => {
+      img.set({
+        top: this.top,
+        left: this.left
+      });
+      canvas2.add(img);
+    });
+    canvas2.renderAll();
+
+    setTimeout(() => {
+      this.urlPreview = canvas2.toDataURL({
+        format: "png",
+        quality: 1
+      });
+    }, 200);
   }
 }

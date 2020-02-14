@@ -1,8 +1,8 @@
 .board-container {
   display: grid;
   height: 100%;
-  grid-template-columns: 64px 1fr 64px;
-  grid-template-rows: 42px 1fr 42px;
+  grid-template-columns: 1fr 410px 1fr;
+  grid-template-rows: 1fr 547px 1fr;
   grid-template-areas:
     "top    top     top"
     ".      canvas  right"
@@ -21,6 +21,13 @@
 .canvas {
   grid-area: canvas;
   background: white;
+  position: relative;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+.canvas-aux {
+  position: absolute;
+  border: 1px solid black;
 }
 .right-controls {
   grid-area: right;

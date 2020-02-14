@@ -1,8 +1,8 @@
 .panel {
   margin-top: 12px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 540px;
+  grid-template-columns: 540px 1fr;
+  grid-template-rows: 640px;
   gap: 12px;
 }
 
