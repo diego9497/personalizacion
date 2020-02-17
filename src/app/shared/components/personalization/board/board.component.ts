@@ -9,6 +9,8 @@ import {
 import { fabric } from "fabric";
 
 import "fabric-customise-controls";
+import { IEvent } from "fabric/fabric-impl";
+import { BoundDirectivePropertyAst } from "@angular/compiler";
 
 @Component({
   selector: "app-board",
@@ -17,7 +19,7 @@ import "fabric-customise-controls";
 })
 export class BoardComponent implements OnInit, AfterViewInit {
   public canvas: fabric.Canvas;
-  // private canvas: any;
+  // public canvas: any;
 
   url = "/assets/background/camiseta-blanca2.png";
   urlMarca = "/assets/marca/exito.png";
@@ -45,6 +47,122 @@ export class BoardComponent implements OnInit, AfterViewInit {
       }
     });
 
+    // this.canvas.on("after:render", () => {
+    //   this.canvas.forEachObject(obj => {
+    //     let bound = obj.getBoundingRect();
+    //     // @ts-ignore
+    //     this.canvas.contextContainer.strokeRect(
+    //       bound.left + 0.5,
+    //       bound.top + 0.5,
+    //       bound.width,
+    //       bound.height
+    //     );
+    //   });
+    // });
+
+    // this.canvas.on("object:moving", () => {
+    //   let obj = this.canvas.getActiveObject();
+    //   console.log("Object mooving ? ");
+    //   let bound = obj.getBoundingRect();
+    //   console.log(obj.top, obj.left);
+    //   console.log(bound.top, bound.left);
+
+    //   if (bound.left <= 0) {
+    //     console.log("Left");
+    //     obj.set({
+    //       left: 0
+    //     });
+    //   }
+    //   if (bound.left + bound.width > this.canvas.getWidth()) {
+    //     console.log("Right");
+    //     obj.set({
+    //       left: this.canvas.getWidth() - bound.width - 1
+    //     });
+    //   }
+    //   if (bound.top < 0) {
+    //     console.log("Top");
+    //     obj.set({
+    //       top: 0 + 1
+    //     });
+    //   }
+    //   if (bound.top + bound.height > this.canvas.getHeight()) {
+    //     console.log("Bottom");
+    //     obj.set({ top: this.canvas.getHeight() - bound.height - 1 });
+    //   }
+    //   obj.setCoords();
+    // });
+
+    this.canvas.on("object:moving", () => {
+      let obj = this.canvas.getActiveObject();
+      console.log("Object mooving ? ");
+      let bound = obj.getBoundingRect();
+      console.log(obj.top, obj.left);
+      console.log(bound.top, bound.left);
+
+      if (bound.left < 0) {
+        console.log("Left");
+        obj.set({
+          left: 0
+        });
+        // bound.left = 0 + 1;
+      }
+      if (bound.left + bound.width > this.canvas.getWidth()) {
+        console.log("Right");
+        obj.set({
+          left: this.canvas.getWidth() - bound.width - 1
+        });
+        // bound.left = this.canvas.getWidth() - bound.width - 1;
+      }
+      if (bound.top < 0) {
+        console.log("Top");
+        obj.set({
+          top: 0
+        });
+        // bound.top = 0 + 1;
+      }
+      if (bound.top + bound.height > this.canvas.getHeight()) {
+        console.log("Bottom");
+        obj.set({ top: this.canvas.getHeight() - bound.height - 1 });
+      }
+      obj.setCoords();
+    });
+
+    this.canvas.on("object:moved", () => {
+      let obj = this.canvas.getActiveObject();
+      console.log("Object mooving ? ");
+      let bound = obj.getBoundingRect();
+      // console.log(obj.top, obj.left);
+      // console.log(bound.top, bound.left);
+
+      if (bound.left < 0) {
+        console.log("Left");
+        obj.set({
+          left: 0
+        });
+        // bound.left = 0 + 1;
+      }
+      if (bound.left + bound.width > this.canvas.getWidth()) {
+        console.log("Right");
+        obj.set({
+          left: this.canvas.getWidth() - bound.width - 1
+        });
+        // bound.left = this.canvas.getWidth() - bound.width - 1;
+      }
+      if (bound.top < 0) {
+        console.log("Top");
+        obj.set({
+          top: 0
+        });
+        // bound.top = 0 + 1;
+      }
+      if (bound.top + bound.height > this.canvas.getHeight()) {
+        console.log("Bottom");
+        obj.set({ top: this.canvas.getHeight() - bound.height - 1 });
+      }
+      obj.setCoords();
+    });
+
+    // @ts-ignore
     fabric.Canvas.prototype.customiseControls(
       {
         tl: {
@@ -59,7 +177,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
               console.log(clone);
             });
 
-            copia.padding = 10;
+            // copia.padding = 10;
             copia.setControlsVisibility({
               ml: false,
               mr: false,
@@ -91,10 +209,10 @@ export class BoardComponent implements OnInit, AfterViewInit {
         }
       },
       function() {
-        this.renderAll();
+        // this.renderAll();
       }
     );
-
+    // @ts-ignore
     fabric.Object.prototype.customiseCornerIcons(
       {
         settings: {
@@ -118,7 +236,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
         }
       },
       function() {
-        this.renderAll();
+        // this.renderAll();
       }
     );
 
@@ -129,24 +247,25 @@ export class BoardComponent implements OnInit, AfterViewInit {
 
     this.removeControls(rect);
     this.canvas.add(rect);
-    let circle = new fabric.Circle({
-      radius: 50,
+    let rect2 = new fabric.Rect({
+      height: 40,
+      width: 40,
       fill: "red",
       top: 100,
       left: 50
     });
-    this.removeControls(circle);
-    this.canvas.add(circle);
+    this.removeControls(rect2);
+    this.canvas.add(rect2);
 
-    let circle2 = new fabric.Circle({
-      radius: 70,
+    let rect3 = new fabric.Rect({
+      height: 60,
+      width: 60,
       fill: "green",
       top: 180,
-      left: 90,
-      padding: 7
+      left: 90
     });
-    this.removeControls(circle2);
-    this.canvas.add(circle2);
+    this.removeControls(rect3);
+    this.canvas.add(rect3);
 
     this.generatePreview();
   }
@@ -195,6 +314,6 @@ export class BoardComponent implements OnInit, AfterViewInit {
     obj.setControlVisible("mt", false);
     obj.setControlVisible("mb", false);
     obj.setControlVisible("mtr", false);
-    obj.padding = 10;
+    // obj.padding = 10;
   };
 }
