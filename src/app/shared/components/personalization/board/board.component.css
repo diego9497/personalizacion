@@ -27,7 +27,7 @@
 }
 .canvas-aux {
   position: absolute;
-  border: 1px solid black;
+  border: 0.5px dashed #999;
 }
 .right-controls {
   grid-area: right;

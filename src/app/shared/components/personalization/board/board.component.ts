@@ -9,8 +9,12 @@ import {
 import { fabric } from "fabric";
 
 import "fabric-customise-controls";
-import { IEvent } from "fabric/fabric-impl";
-import { BoundDirectivePropertyAst } from "@angular/compiler";
+
+import exportFromJSON from "export-from-json";
+
+import dataJson from "./data.json";
+
+//https://stackoverflow.com/questions/42833142/prevent-fabric-js-objects-from-scaling-out-of-the-canvas-boundary
 
 @Component({
   selector: "app-board",
@@ -28,6 +32,9 @@ export class BoardComponent implements OnInit, AfterViewInit {
   top = 100;
   left = 90;
 
+  scaleX = 1;
+  scaleY = 1;
+
   @ViewChild("container", { static: true }) canvasContainer: ElementRef;
 
   constructor() {}
@@ -35,15 +42,34 @@ export class BoardComponent implements OnInit, AfterViewInit {
   ngOnInit() {}
 
   ngAfterViewInit(): void {
-    this.canvas = new fabric.Canvas("canvas");
+    this.canvas = new fabric.Canvas("canvas", {
+      preserveObjectStacking: true,
+      controlsAboveOverlay: true
+    });
     let height = 300;
     let width = 220;
     this.canvas.setHeight(height);
     this.canvas.setWidth(width);
-
     this.canvas.on("selection:created", e => {
       if (e.target.type === "activeSelection") {
         this.canvas.discardActiveObject();
+      }
+    });
+
+    this.canvas.on("object:scaling", e => {
+      let obj = this.canvas.getActiveObject();
+      let bound = obj.getBoundingRect();
+      if (
+        bound.width >= this.canvas.getWidth() ||
+        bound.height >= this.canvas.getHeight()
+      ) {
+        obj.scaleX = this.scaleX;
+        obj.scaleY = this.scaleY;
+        this.canvas.renderAll();
+      } else {
+        this.scaleX = obj.scaleX;
+        this.scaleY = obj.scaleY;
+        this.canvas.renderAll();
       }
     });
 
@@ -60,104 +86,27 @@ export class BoardComponent implements OnInit, AfterViewInit {
     //   });
     // });
 
-    // this.canvas.on("object:moving", () => {
-    //   let obj = this.canvas.getActiveObject();
-    //   console.log("Object mooving ? ");
-    //   let bound = obj.getBoundingRect();
-    //   console.log(obj.top, obj.left);
-    //   console.log(bound.top, bound.left);
-
-    //   if (bound.left <= 0) {
-    //     console.log("Left");
-    //     obj.set({
-    //       left: 0
-    //     });
-    //   }
-    //   if (bound.left + bound.width > this.canvas.getWidth()) {
-    //     console.log("Right");
-    //     obj.set({
-    //       left: this.canvas.getWidth() - bound.width - 1
-    //     });
-    //   }
-    //   if (bound.top < 0) {
-    //     console.log("Top");
-    //     obj.set({
-    //       top: 0 + 1
-    //     });
-    //   }
-    //   if (bound.top + bound.height > this.canvas.getHeight()) {
-    //     console.log("Bottom");
-    //     obj.set({ top: this.canvas.getHeight() - bound.height - 1 });
-    //   }
-    //   obj.setCoords();
-    // });
-
     this.canvas.on("object:moving", () => {
       let obj = this.canvas.getActiveObject();
-      console.log("Object mooving ? ");
-      let bound = obj.getBoundingRect();
-      console.log(obj.top, obj.left);
-      console.log(bound.top, bound.left);
+      let bound = obj.getBoundingRect(true, true);
 
-      if (bound.left < 0) {
-        console.log("Left");
+      if (bound.top <= 0) {
         obj.set({
-          left: 0
+          top: bound.height / 2
         });
-        // bound.left = 0 + 1;
       }
-      if (bound.left + bound.width > this.canvas.getWidth()) {
-        console.log("Right");
+      if (bound.top + bound.height >= this.canvas.getHeight()) {
+        obj.set({ top: this.canvas.getHeight() - bound.height / 2 - 1 });
+      }
+      if (bound.left <= 0) {
         obj.set({
-          left: this.canvas.getWidth() - bound.width - 1
+          left: bound.width / 2
         });
-        // bound.left = this.canvas.getWidth() - bound.width - 1;
       }
-      if (bound.top < 0) {
-        console.log("Top");
+      if (bound.left + bound.width >= this.canvas.getWidth()) {
         obj.set({
-          top: 0
+          left: this.canvas.getWidth() - bound.width / 2 - 1
         });
-        // bound.top = 0 + 1;
-      }
-      if (bound.top + bound.height > this.canvas.getHeight()) {
-        console.log("Bottom");
-        obj.set({ top: this.canvas.getHeight() - bound.height - 1 });
-      }
-      obj.setCoords();
-    });
-
-    this.canvas.on("object:moved", () => {
-      let obj = this.canvas.getActiveObject();
-      console.log("Object mooving ? ");
-      let bound = obj.getBoundingRect();
-      // console.log(obj.top, obj.left);
-      // console.log(bound.top, bound.left);
-
-      if (bound.left < 0) {
-        console.log("Left");
-        obj.set({
-          left: 0
-        });
-        // bound.left = 0 + 1;
-      }
-      if (bound.left + bound.width > this.canvas.getWidth()) {
-        console.log("Right");
-        obj.set({
-          left: this.canvas.getWidth() - bound.width - 1
-        });
-        // bound.left = this.canvas.getWidth() - bound.width - 1;
-      }
-      if (bound.top < 0) {
-        console.log("Top");
-        obj.set({
-          top: 0
-        });
-        // bound.top = 0 + 1;
-      }
-      if (bound.top + bound.height > this.canvas.getHeight()) {
-        console.log("Bottom");
-        obj.set({ top: this.canvas.getHeight() - bound.height - 1 });
       }
       obj.setCoords();
     });
@@ -240,33 +189,11 @@ export class BoardComponent implements OnInit, AfterViewInit {
       }
     );
 
-    let rect = new fabric.Rect({
-      width: 50,
-      height: 60
+    this.canvas.loadFromJSON({ ...dataJson }, () => {
+      this.canvas._objects.forEach(obj => {
+        this.removeControls(obj);
+      });
     });
-
-    this.removeControls(rect);
-    this.canvas.add(rect);
-    let rect2 = new fabric.Rect({
-      height: 40,
-      width: 40,
-      fill: "red",
-      top: 100,
-      left: 50
-    });
-    this.removeControls(rect2);
-    this.canvas.add(rect2);
-
-    let rect3 = new fabric.Rect({
-      height: 60,
-      width: 60,
-      fill: "green",
-      top: 180,
-      left: 90
-    });
-    this.removeControls(rect3);
-    this.canvas.add(rect3);
-
     this.generatePreview();
   }
   private clamp = (num: number, min: number, max: number) => {
@@ -306,6 +233,40 @@ export class BoardComponent implements OnInit, AfterViewInit {
         quality: 1
       });
     }, 500);
+
+    // let data = this.canvas.toJSON();
+    // exportFromJSON({ data, fileName: "data", exportType: "json" });
+  };
+
+  moveToUp = () => {
+    if (this.canvas.getActiveObject()) {
+      let obj = this.canvas.getActiveObject();
+      let currentIndex = this.canvas.getObjects().indexOf(obj);
+      obj.moveTo(currentIndex + 1);
+    }
+  };
+
+  moveToDown = () => {
+    if (this.canvas.getActiveObject()) {
+      let obj = this.canvas.getActiveObject();
+      let currentIndex = this.canvas.getObjects().indexOf(obj);
+      obj.moveTo(currentIndex - 1);
+    }
+  };
+
+  centerObject = () => {
+    if (this.canvas.getActiveObject()) {
+      let obj = this.canvas.getActiveObject();
+      obj.set({
+        top: this.canvas.getHeight() / 2,
+        left: this.canvas.getWidth() / 2
+      });
+      obj.setCoords();
+      this.canvas.renderAll();
+    }
+  };
+  clearCanvas = () => {
+    this.canvas.clear();
   };
 
   removeControls = obj => {

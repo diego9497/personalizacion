@@ -20,6 +20,7 @@
     "@angular/platform-browser-dynamic": "~8.2.14",
     "@angular/router": "~8.2.14",
     "@types/fabric": "^3.6.1",
+    "export-from-json": "^1.1.4",
     "fabric": "^4.0.0-beta.5",
     "fabric-customise-controls": "^2.0.6-beta",
     "rxjs": "~6.4.0",
