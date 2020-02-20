@@ -34,6 +34,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
 
   scaleX = 1;
   scaleY = 1;
+  scalingProperties = null;
 
   @ViewChild("container", { static: true }) canvasContainer: ElementRef;
 
@@ -57,20 +58,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
     });
 
     this.canvas.on("object:scaling", e => {
-      let obj = this.canvas.getActiveObject();
-      let bound = obj.getBoundingRect();
-      if (
-        bound.width >= this.canvas.getWidth() ||
-        bound.height >= this.canvas.getHeight()
-      ) {
-        obj.scaleX = this.scaleX;
-        obj.scaleY = this.scaleY;
-        this.canvas.renderAll();
-      } else {
-        this.scaleX = obj.scaleX;
-        this.scaleY = obj.scaleY;
-        this.canvas.renderAll();
-      }
+      this.handleScaling(e);
     });
 
     // this.canvas.on("after:render", () => {
@@ -276,5 +264,105 @@ export class BoardComponent implements OnInit, AfterViewInit {
     obj.setControlVisible("mb", false);
     obj.setControlVisible("mtr", false);
     // obj.padding = 10;
+  };
+
+  handleScaling = e => {
+    var obj = e.target;
+    var brOld = obj.getBoundingRect();
+    obj.setCoords();
+    var brNew = obj.getBoundingRect();
+    // left border
+    // 1. compute the scale that sets obj.left equal 0
+    // 2. compute height if the same scale is applied to Y (we do not allow non-uniform scaling)
+    // 3. compute obj.top based on new height
+    if (brOld.left >= 0 && brNew.left < 0) {
+      let scale = (brOld.width + brOld.left) / obj.width;
+      let height = obj.height * scale;
+      let top =
+        ((brNew.top - brOld.top) / (brNew.height - brOld.height)) *
+          (height - brOld.height) +
+        brOld.top;
+      this._setScalingProperties(
+        0 + brNew.width / 2,
+        top + brNew.height / 2,
+        scale
+      );
+    }
+
+    // top border
+    if (brOld.top >= 0 && brNew.top < 0) {
+      let scale = (brOld.height + brOld.top) / obj.height;
+      let width = obj.width * scale;
+      let left =
+        ((brNew.left - brOld.left) / (brNew.width - brOld.width)) *
+          (width - brOld.width) +
+        brOld.left;
+      this._setScalingProperties(
+        left + brNew.width / 2,
+        0 + brNew.height / 2,
+        scale
+      );
+    }
+    // right border
+    if (
+      brOld.left + brOld.width <= obj.canvas.width &&
+      brNew.left + brNew.width > obj.canvas.width
+    ) {
+      let scale = (obj.canvas.width - brOld.left) / obj.width;
+      let height = obj.height * scale;
+      let top =
+        ((brNew.top - brOld.top) / (brNew.height - brOld.height)) *
+          (height - brOld.height) +
+        brOld.top;
+      this._setScalingProperties(
+        brNew.left + brNew.width / 2,
+        top + brNew.height / 2,
+        scale
+      );
+    }
+    // bottom border
+    if (
+      brOld.top + brOld.height <= obj.canvas.height &&
+      brNew.top + brNew.height > obj.canvas.height
+    ) {
+      let scale = (obj.canvas.height - brOld.top) / obj.height;
+      let width = obj.width * scale;
+      let left =
+        ((brNew.left - brOld.left) / (brNew.width - brOld.width)) *
+          (width - brOld.width) +
+        brOld.left;
+      this._setScalingProperties(
+        left + brNew.width / 2,
+        brNew.top + brNew.height / 2,
+        scale
+      );
+    }
+
+    if (
+      brNew.left < 0 ||
+      brNew.top < 0 ||
+      brNew.left + brNew.width > obj.canvas.width ||
+      brNew.top + brNew.height > obj.canvas.height
+    ) {
+      obj.left = this.scalingProperties["left"];
+      obj.top = this.scalingProperties["top"];
+      obj.scaleX = this.scalingProperties["scale"];
+      obj.scaleY = this.scalingProperties["scale"];
+      obj.setCoords();
+    } else {
+      this.scalingProperties = null;
+    }
+  };
+  _setScalingProperties = (left, top, scale) => {
+    if (
+      this.scalingProperties == null ||
+      this.scalingProperties["scale"] > scale
+    ) {
+      this.scalingProperties = {
+        left: left,
+        top: top,
+        scale: scale
+      };
+    }
   };
 }
