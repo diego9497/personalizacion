@@ -13,6 +13,7 @@ import "fabric-customise-controls";
 import exportFromJSON from "export-from-json";
 
 import dataJson from "./data.json";
+import { resolve } from "url";
 
 //https://stackoverflow.com/questions/42833142/prevent-fabric-js-objects-from-scaling-out-of-the-canvas-boundary
 
@@ -56,6 +57,52 @@ export class BoardComponent implements OnInit, AfterViewInit {
         this.canvas.discardActiveObject();
       }
     });
+
+    let img1 = null;
+    let img2 = null;
+    fabric.Image.fromURL(
+      "/assets/despiece/1.webp",
+      img => {
+        let filtro = new fabric.Image.filters.Sepia();
+        filtro = new fabric.Image.filters.BlendColor({
+          color: "#4CEE67",
+          alpha: 1
+        });
+        img.filters.push(filtro);
+        img.applyFilters();
+        this.removeControls(img);
+        this.canvas.add(img);
+      },
+      {
+        scaleX: 0.3,
+        scaleY: 0.3,
+        crossOrigin: "",
+        top: 50,
+        left: 20
+      }
+    );
+    fabric.Image.fromURL(
+      "/assets/despiece/2.webp",
+      img => {
+        let filtro = new fabric.Image.filters.Sepia();
+        filtro = new fabric.Image.filters.BlendColor({
+          color: "#F00",
+          alpha: 1
+        });
+        console.log("Filtro", filtro);
+        img.filters.push(filtro);
+        img.applyFilters();
+        this.removeControls(img);
+        this.canvas.add(img);
+      },
+      {
+        scaleX: 0.3,
+        scaleY: 0.3,
+        crossOrigin: "",
+        top: 50,
+        left: 20
+      }
+    );
 
     this.canvas.on("object:scaling", e => {
       this.handleScaling(e);
