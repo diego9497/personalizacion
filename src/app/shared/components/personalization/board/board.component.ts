@@ -10,12 +10,8 @@ import { fabric } from "fabric";
 
 import "fabric-customise-controls";
 
-import exportFromJSON from "export-from-json";
 
 import dataJson from "./data.json";
-import { resolve } from "url";
-
-//https://stackoverflow.com/questions/42833142/prevent-fabric-js-objects-from-scaling-out-of-the-canvas-boundary
 
 @Component({
   selector: "app-board",
@@ -52,74 +48,60 @@ export class BoardComponent implements OnInit, AfterViewInit {
     let width = 220;
     this.canvas.setHeight(height);
     this.canvas.setWidth(width);
+
     this.canvas.on("selection:created", e => {
       if (e.target.type === "activeSelection") {
         this.canvas.discardActiveObject();
       }
     });
 
-    let img1 = null;
-    let img2 = null;
-    fabric.Image.fromURL(
-      "/assets/despiece/1.webp",
-      img => {
-        let filtro = new fabric.Image.filters.Sepia();
-        filtro = new fabric.Image.filters.BlendColor({
-          color: "#4CEE67",
-          alpha: 1
-        });
-        img.filters.push(filtro);
-        img.applyFilters();
-        this.removeControls(img);
-        this.canvas.add(img);
-      },
-      {
-        scaleX: 0.3,
-        scaleY: 0.3,
-        crossOrigin: "",
-        top: 50,
-        left: 20
-      }
-    );
-    fabric.Image.fromURL(
-      "/assets/despiece/2.webp",
-      img => {
-        let filtro = new fabric.Image.filters.Sepia();
-        filtro = new fabric.Image.filters.BlendColor({
-          color: "#F00",
-          alpha: 1
-        });
-        console.log("Filtro", filtro);
-        img.filters.push(filtro);
-        img.applyFilters();
-        this.removeControls(img);
-        this.canvas.add(img);
-      },
-      {
-        scaleX: 0.3,
-        scaleY: 0.3,
-        crossOrigin: "",
-        top: 50,
-        left: 20
-      }
-    );
-
     this.canvas.on("object:scaling", e => {
-      this.handleScaling(e);
+      let obj = this.canvas.getActiveObject();
+      obj.lockScalingX = false;
+      obj.lockScalingY = false;
+      obj.setCoords();
+      let boundNext = obj.getBoundingRect();
+
+      if (
+        boundNext.left + boundNext.width >= this.canvas.getWidth() ||
+        boundNext.left <= 0 ||
+        boundNext.top <= 0 ||
+        boundNext.top + boundNext.height >= this.canvas.getHeight()
+      ) {
+        obj.lockScalingX = true;
+        obj.lockScalingY = true;
+        obj.setCoords();
+      }
     });
 
-    // this.canvas.on("after:render", () => {
-    //   this.canvas.forEachObject(obj => {
-    //     let bound = obj.getBoundingRect();
-    //     // @ts-ignore
-    //     this.canvas.contextContainer.strokeRect(
-    //       bound.left + 0.5,
-    //       bound.top + 0.5,
-    //       bound.width,
-    //       bound.height
-    //     );
-    //   });
-    // });
+    this.canvas.on("object:rotating", e => {
+      let obj = this.canvas.getActiveObject();
+      obj.lockRotation = false;
+      obj.setCoords();
+      let boundNext = obj.getBoundingRect();
+
+      if (
+        boundNext.left + boundNext.width >= this.canvas.getWidth() ||
+        boundNext.left <= 0 ||
+        boundNext.top <= 0 ||
+        boundNext.top + boundNext.height >= this.canvas.getHeight()
+      ) {
+        obj.lockRotation = true;
+        obj.setCoords();
+      }
+    });
+
+    this.canvas.on("object:scaled", e => {
+      let obj = this.canvas.getActiveObject();
+      obj.lockScalingX = false;
+      obj.lockScalingY = false;
+      obj.setCoords();
+    });
+    this.canvas.on("object:rotated", e => {
+      let obj = this.canvas.getActiveObject();
+      obj.lockRotation = false;
+      obj.setCoords();
+    });
 
     this.canvas.on("object:moving", () => {
       let obj = this.canvas.getActiveObject();
@@ -146,21 +128,16 @@ export class BoardComponent implements OnInit, AfterViewInit {
       obj.setCoords();
     });
 
-    // @ts-ignore
-    fabric.Canvas.prototype.customiseControls(
-      {
-        tl: {
-          cursor: "pointer",
-          action: function(
-            e,
-            target: fabric.Rect | fabric.IText | fabric.Circle
-          ) {
-            let copia;
-            target.canvas.getActiveObject().clone(clone => {
-              copia = clone;
-              console.log(clone);
-            });
+    this.loadImages();
 
+    // @ts-ignore
+    fabric.Canvas.prototype.customiseControls({
+      tl: {
+        cursor: "pointer",
+        action: function(e, target: fabric.Image | fabric.Group) {
+          let copia;
+          target.canvas.getActiveObject().clone(clone => {
+            copia = clone;
             // copia.padding = 10;
             copia.setControlsVisibility({
               ml: false,
@@ -170,59 +147,47 @@ export class BoardComponent implements OnInit, AfterViewInit {
               mtr: false
             });
 
-            copia.set({
-              top:
-                (target.canvas.getHeight() - copia.height * copia.scaleY) / 2,
-              left: (target.canvas.getWidth() - copia.width * copia.scaleX) / 2
-            });
-            copia.setCoords();
             target.canvas.add(copia);
+            copia.center();
             target.canvas.renderAll();
-          }
-        },
-        tr: {
-          action: "rotate",
-          cursor: "grabbing"
-        },
-        bl: {
-          action: "remove",
-          cursor: "pointer"
-        },
-        br: {
-          cursor: "nw-resize"
+          });
         }
       },
-      function() {
-        // this.renderAll();
+      tr: {
+        action: "rotate",
+        cursor: "grabbing"
+      },
+      bl: {
+        action: "remove",
+        cursor: "pointer"
+      },
+      br: {
+        cursor: "nw-resize"
       }
-    );
+    });
+
     // @ts-ignore
-    fabric.Object.prototype.customiseCornerIcons(
-      {
-        settings: {
-          borderColor: "#bbb",
-          cornerSize: 22,
-          cornerShape: "rect",
-          cornerBackgroundColor: "#e6e6e6",
-          cornerPadding: 5
-        },
-        tl: {
-          icon: "assets/icons/duplicate.svg"
-        },
-        tr: {
-          icon: "assets/icons/rotate.svg"
-        },
-        bl: {
-          icon: "assets/icons/delete.svg"
-        },
-        br: {
-          icon: "assets/icons/resize.svg"
-        }
+    fabric.Object.prototype.customiseCornerIcons({
+      settings: {
+        borderColor: "#bbb",
+        cornerSize: 22,
+        cornerShape: "rect",
+        cornerBackgroundColor: "#e6e6e6",
+        cornerPadding: 5
       },
-      function() {
-        // this.renderAll();
+      tl: {
+        icon: "assets/icons/duplicate.svg"
+      },
+      tr: {
+        icon: "assets/icons/rotate.svg"
+      },
+      bl: {
+        icon: "assets/icons/delete.svg"
+      },
+      br: {
+        icon: "assets/icons/resize.svg"
       }
-    );
+    });
 
     this.canvas.loadFromJSON({ ...dataJson }, () => {
       this.canvas._objects.forEach(obj => {
@@ -231,8 +196,100 @@ export class BoardComponent implements OnInit, AfterViewInit {
     });
     this.generatePreview();
   }
-  private clamp = (num: number, min: number, max: number) => {
-    return Math.min(Math.max(num, min), max);
+
+  loadImages = async () => {
+    let images = [
+      {
+        url: "/assets/despiece/5.rostro.png",
+        color: "#FFFF73"
+      },
+      {
+        url: "/assets/despiece/2.ojos.png",
+        color: "#8C0000"
+      },
+      {
+        url: "/assets/despiece/3.boca.png",
+        color: "#FF7373"
+      },
+      {
+        url: "/assets/despiece/4.pelo.png",
+        color: "#000000"
+      },
+      {
+        url: "/assets/despiece/6.Borde rostro.png",
+        color: "#000000"
+      }
+    ];
+
+    // let images = [
+    //   {
+    //     url: "/assets/despiece/1.webp",
+    //     color: "#000"
+    //   },
+    //   {
+    //     url: "/assets/despiece/2.webp",
+    //     color: "#fff"
+    //   }
+    // ];
+
+    let group = [];
+    let height = 0;
+    let width = 0;
+    for (let i = 0; i < images.length; i++) {
+      let image = await this.createImage(images[i]);
+      height = image.height;
+      width = image.width;
+      group.push(image);
+    }
+
+    let factor = height / this.canvas.getHeight();
+    factor = 0.8 / factor;
+    while (
+      width * factor >= this.canvas.getWidth() ||
+      height * factor >= this.canvas.getHeight()
+    ) {
+      factor -= 0.1;
+    }
+
+    let image = new fabric.Group(group, {
+      scaleX: factor,
+      scaleY: factor,
+      originX: "center",
+      originY: "center"
+    });
+    image.centeredScaling = true;
+    this.removeControls(image);
+    this.canvas.add(image);
+    image.center();
+    this.canvas.setActiveObject(image);
+    this.canvas.renderAll();
+  };
+
+  createImage = async img => {
+    let imgDom = await this.loadImage(img.url);
+    //@ts-ignore
+    let imgFabric = new fabric.Image(imgDom, {
+      crossOrigin: ""
+    });
+    let filtro = new fabric.Image.filters.BlendColor({
+      color: img.color,
+      alpha: 1
+    });
+
+    imgFabric.filters.push(filtro);
+    imgFabric.applyFilters();
+    this.removeControls(imgFabric);
+    imgFabric.center();
+    return imgFabric;
+  };
+
+  loadImage = src => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.addEventListener("load", () => resolve(img));
+      img.addEventListener("error", err => reject(err));
+      img.src = src;
+    });
   };
 
   private generateDesign = () => {
@@ -268,9 +325,6 @@ export class BoardComponent implements OnInit, AfterViewInit {
         quality: 1
       });
     }, 500);
-
-    // let data = this.canvas.toJSON();
-    // exportFromJSON({ data, fileName: "data", exportType: "json" });
   };
 
   moveToUp = () => {
@@ -292,11 +346,7 @@ export class BoardComponent implements OnInit, AfterViewInit {
   centerObject = () => {
     if (this.canvas.getActiveObject()) {
       let obj = this.canvas.getActiveObject();
-      obj.set({
-        top: this.canvas.getHeight() / 2,
-        left: this.canvas.getWidth() / 2
-      });
-      obj.setCoords();
+      obj.center();
       this.canvas.renderAll();
     }
   };
@@ -311,105 +361,5 @@ export class BoardComponent implements OnInit, AfterViewInit {
     obj.setControlVisible("mb", false);
     obj.setControlVisible("mtr", false);
     // obj.padding = 10;
-  };
-
-  handleScaling = e => {
-    var obj = e.target;
-    var brOld = obj.getBoundingRect();
-    obj.setCoords();
-    var brNew = obj.getBoundingRect();
-    // left border
-    // 1. compute the scale that sets obj.left equal 0
-    // 2. compute height if the same scale is applied to Y (we do not allow non-uniform scaling)
-    // 3. compute obj.top based on new height
-    if (brOld.left >= 0 && brNew.left < 0) {
-      let scale = (brOld.width + brOld.left) / obj.width;
-      let height = obj.height * scale;
-      let top =
-        ((brNew.top - brOld.top) / (brNew.height - brOld.height)) *
-          (height - brOld.height) +
-        brOld.top;
-      this._setScalingProperties(
-        0 + brNew.width / 2,
-        top + brNew.height / 2,
-        scale
-      );
-    }
-
-    // top border
-    if (brOld.top >= 0 && brNew.top < 0) {
-      let scale = (brOld.height + brOld.top) / obj.height;
-      let width = obj.width * scale;
-      let left =
-        ((brNew.left - brOld.left) / (brNew.width - brOld.width)) *
-          (width - brOld.width) +
-        brOld.left;
-      this._setScalingProperties(
-        left + brNew.width / 2,
-        0 + brNew.height / 2,
-        scale
-      );
-    }
-    // right border
-    if (
-      brOld.left + brOld.width <= obj.canvas.width &&
-      brNew.left + brNew.width > obj.canvas.width
-    ) {
-      let scale = (obj.canvas.width - brOld.left) / obj.width;
-      let height = obj.height * scale;
-      let top =
-        ((brNew.top - brOld.top) / (brNew.height - brOld.height)) *
-          (height - brOld.height) +
-        brOld.top;
-      this._setScalingProperties(
-        brNew.left + brNew.width / 2,
-        top + brNew.height / 2,
-        scale
-      );
-    }
-    // bottom border
-    if (
-      brOld.top + brOld.height <= obj.canvas.height &&
-      brNew.top + brNew.height > obj.canvas.height
-    ) {
-      let scale = (obj.canvas.height - brOld.top) / obj.height;
-      let width = obj.width * scale;
-      let left =
-        ((brNew.left - brOld.left) / (brNew.width - brOld.width)) *
-          (width - brOld.width) +
-        brOld.left;
-      this._setScalingProperties(
-        left + brNew.width / 2,
-        brNew.top + brNew.height / 2,
-        scale
-      );
-    }
-
-    if (
-      brNew.left < 0 ||
-      brNew.top < 0 ||
-      brNew.left + brNew.width > obj.canvas.width ||
-      brNew.top + brNew.height > obj.canvas.height
-    ) {
-      obj.left = this.scalingProperties["left"];
-      obj.top = this.scalingProperties["top"];
-      obj.scaleX = this.scalingProperties["scale"];
-      obj.scaleY = this.scalingProperties["scale"];
-      obj.setCoords();
-    } else {
-      this.scalingProperties = null;
-    }
-  };
-  _setScalingProperties = (left, top, scale) => {
-    if (
-      this.scalingProperties == null ||
-      this.scalingProperties["scale"] > scale
-    ) {
-      this.scalingProperties = {
-        left: left,
-        top: top,
-        scale: scale
-      };
-    }
   };
 }
