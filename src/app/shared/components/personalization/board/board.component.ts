@@ -10,7 +10,6 @@ import { fabric } from "fabric";
 
 import "fabric-customise-controls";
 
-
 import dataJson from "./data.json";
 
 @Component({
